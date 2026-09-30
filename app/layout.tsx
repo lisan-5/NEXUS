@@ -21,7 +21,10 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'NEXUS - Real-Time Data Infrastructure',
+  title: {
+    default: 'NEXUS - Real-Time Data Infrastructure',
+    template: '%s — NEXUS',
+  },
   description: 'Connect, process, and route live data across your entire stack with reliable real-time infrastructure.',
 }
 

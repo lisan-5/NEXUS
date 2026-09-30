@@ -34,6 +34,14 @@ const testimonials = [
   },
 ];
 
+// Deterministic pattern so server and client render identical markup
+const asciiPattern = Array.from({ length: 60 }, (_, row) =>
+  Array.from({ length: 100 }, (_, col) => {
+    const n = Math.sin(row * 12.9898 + col * 78.233) * 43758.5453;
+    return n - Math.floor(n) > 0.7 ? '"' : " ";
+  }).join("")
+).join("\n");
+
 export function TestimonialsSection() {
   const [activeIndex, setActiveIndex] = useState(0);
   const [isVisible, setIsVisible] = useState(false);
@@ -81,11 +89,7 @@ export function TestimonialsSection() {
     <section ref={sectionRef} className="relative py-32 lg:py-40 bg-foreground text-background overflow-hidden">
       {/* ASCII background pattern */}
       <div className="absolute inset-0 font-mono text-[10px] text-background/[0.02] leading-tight overflow-hidden whitespace-pre select-none">
-        {Array.from({ length: 60 }, (_, i) => 
-          Array.from({ length: 100 }, () => 
-            Math.random() > 0.7 ? '"' : ' '
-          ).join("")
-        ).join("\n")}
+        {asciiPattern}
       </div>
 
       <div className="relative z-10 max-w-[1400px] mx-auto px-6 lg:px-12">

@@ -102,6 +102,8 @@ export function SecuritySection() {
                   key={feature.image}
                   src={feature.image}
                   alt={feature.title}
+                  loading="lazy"
+                  decoding="async"
                   className="absolute h-3/4 w-3/4 object-contain object-right transition-opacity duration-500"
                   style={{ opacity: activeFeature === index ? 0.85 : 0 }}
                 />
@@ -137,12 +139,15 @@ export function SecuritySection() {
             {securityFeatures.map((feature, index) => (
               <div
                 key={feature.title}
-                className={`p-6 border transition-all duration-500 cursor-default ${
-                  activeFeature === index 
-                    ? "border-foreground/30 bg-foreground/[0.04]" 
-                    : "border-foreground/10"
-                } ${isVisible ? "opacity-100 translate-x-0" : "opacity-0 translate-x-8"}`}
+                className={`transition-all duration-500 ${isVisible ? "opacity-100 translate-x-0" : "opacity-0 translate-x-8"}`}
                 style={{ transitionDelay: `${index * 80}ms` }}
+              >
+              <div
+                className={`p-6 border transition-colors duration-300 cursor-default ${
+                  activeFeature === index
+                    ? "border-foreground/30 bg-foreground/[0.04]"
+                    : "border-foreground/10"
+                }`}
                 onClick={() => setActiveFeature(index)}
                 onMouseEnter={() => setActiveFeature(index)}
               >
@@ -159,6 +164,7 @@ export function SecuritySection() {
                     <p className="text-sm text-muted-foreground">{feature.description}</p>
                   </div>
                 </div>
+              </div>
               </div>
             ))}
           </div>

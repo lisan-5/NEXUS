@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
+import Link from "next/link";
 
 const logos: Record<string, React.ReactNode> = {
   OpenAI: (
@@ -82,8 +83,6 @@ const integrations = [
 
 export function IntegrationsSection() {
   const [isVisible, setIsVisible] = useState(false);
-  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
-  const [mousePos, setMousePos] = useState<{ x: number; y: number } | null>(null);
   const sectionRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
@@ -134,6 +133,8 @@ export function IntegrationsSection() {
           src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/connection-KeJwWPQvn6l0a7C48tCARYtNEdC92H.png"
           alt=""
           aria-hidden="true"
+          loading="lazy"
+          decoding="async"
           className="w-full h-auto object-cover"
         />
       </div>
@@ -142,63 +143,43 @@ export function IntegrationsSection() {
       <div className="relative z-10 mt-0 lg:-mt-24 max-w-[1400px] mx-auto px-6 lg:px-12">
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-16">
           {integrations.map((integration, index) => (
+            // Outer wrapper owns the staggered entrance so its delay never slows down hover feedback
             <div
               key={integration.name}
-              className={`group relative overflow-hidden p-6 lg:p-8 border transition-all duration-500 cursor-default ${
-                hoveredIndex === index
-                  ? "border-foreground bg-foreground/[0.04] scale-[1.02]"
-                  : "border-foreground/10 hover:border-foreground/30"
-              } ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}
-              style={{
-                transitionDelay: `${index * 30 + 300}ms`,
-              }}
-              onMouseEnter={(e) => {
-                setHoveredIndex(index);
-                const rect = e.currentTarget.getBoundingClientRect();
-                setMousePos({ x: e.clientX - rect.left, y: e.clientY - rect.top });
-              }}
-              onMouseMove={(e) => {
-                const rect = e.currentTarget.getBoundingClientRect();
-                setMousePos({ x: e.clientX - rect.left, y: e.clientY - rect.top });
-              }}
-              onMouseLeave={() => {
-                setHoveredIndex(null);
-                setMousePos(null);
-              }}
+              className={`transition-all duration-500 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}
+              style={{ transitionDelay: `${index * 30 + 300}ms` }}
             >
-              {/* Cursor-following halo */}
-              {hoveredIndex === index && mousePos && (
+              <div
+                className="group relative h-full overflow-hidden p-6 lg:p-8 border border-foreground/10 transition-[border-color,background-color,transform] duration-300 cursor-default hover:border-foreground hover:bg-foreground/[0.04] hover:scale-[1.02]"
+                onMouseMove={(e) => {
+                  e.currentTarget.style.setProperty("--mx", `${e.nativeEvent.offsetX}px`);
+                  e.currentTarget.style.setProperty("--my", `${e.nativeEvent.offsetY}px`);
+                }}
+              >
+                {/* Cursor-following halo */}
                 <span
                   aria-hidden="true"
-                  className="pointer-events-none absolute inset-0 z-0"
+                  className="pointer-events-none absolute inset-0 z-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
                   style={{
-                    background: `radial-gradient(200px circle at ${mousePos.x}px ${mousePos.y}px, rgba(255,255,255,0.1) 0%, transparent 70%)`,
+                    background: "radial-gradient(200px circle at var(--mx, 50%) var(--my, 50%), rgba(255,255,255,0.1) 0%, transparent 70%)",
                   }}
                 />
-              )}
-              {/* Category tag */}
-              <span className={`absolute top-3 right-3 text-[10px] font-mono px-2 py-0.5 transition-colors ${
-                hoveredIndex === index
-                  ? "bg-foreground text-background"
-                  : "bg-foreground/10 text-muted-foreground"
-              }`}>
-                {integration.category}
-              </span>
+                {/* Category tag */}
+                <span className="pointer-events-none absolute top-3 right-3 text-[10px] font-mono px-2 py-0.5 transition-colors bg-foreground/10 text-muted-foreground group-hover:bg-foreground group-hover:text-background">
+                  {integration.category}
+                </span>
 
-              {/* Logo */}
-              <div className={`w-10 h-10 mb-6 flex items-center justify-center transition-colors ${
-                hoveredIndex === index ? "text-white" : "text-foreground/60"
-              }`}>
-                {logos[integration.name]}
-              </div>
+                {/* Logo */}
+                <div className="pointer-events-none relative w-10 h-10 mb-6 flex items-center justify-center transition-colors text-foreground/60 group-hover:text-white">
+                  {logos[integration.name]}
+                </div>
 
-              <span className="font-medium block">{integration.name}</span>
+                <span className="pointer-events-none relative font-medium block">{integration.name}</span>
 
-              {/* Animated underline */}
-              <div className="absolute bottom-0 left-0 right-0 h-px bg-foreground/20 overflow-hidden">
-                <div className={`h-full bg-foreground transition-all duration-500 ${
-                  hoveredIndex === index ? "w-full" : "w-0"
-                }`} />
+                {/* Animated underline */}
+                <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-px bg-foreground/20 overflow-hidden">
+                  <div className="h-full bg-foreground transition-all duration-500 w-0 group-hover:w-full" />
+                </div>
               </div>
             </div>
           ))}
@@ -221,10 +202,10 @@ export function IntegrationsSection() {
             ))}
           </div>
 
-          <a href="#" className="group inline-flex items-center gap-2 text-sm font-mono text-muted-foreground hover:text-foreground transition-colors">
+          <Link href="/docs#connectors" className="group inline-flex items-center gap-2 text-sm font-mono text-muted-foreground hover:text-foreground transition-colors">
             View all integrations
             <span className="group-hover:translate-x-1 transition-transform">&rarr;</span>
-          </a>
+          </Link>
         </div>
       </div>
     </section>

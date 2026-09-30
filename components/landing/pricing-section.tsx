@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import Link from "next/link";
 import { ArrowRight, Check, Zap } from "lucide-react";
 
 const plans = [
@@ -16,6 +17,7 @@ const plans = [
       "Core connectors",
     ],
     cta: "Start free",
+    href: "/signup",
     highlight: false,
   },
   {
@@ -32,6 +34,7 @@ const plans = [
       "Schema registry",
     ],
     cta: "Start trial",
+    href: "/signup?plan=builder",
     highlight: true,
   },
   {
@@ -49,6 +52,7 @@ const plans = [
       "Dedicated compute",
     ],
     cta: "Contact sales",
+    href: "/contact?topic=sales",
     highlight: false,
   },
 ];
@@ -97,10 +101,35 @@ export function PricingSection() {
               <img
                 src="/images/whale.png"
                 alt="Organic whale"
+                loading="lazy"
+                decoding="async"
                 className="w-full h-full object-contain object-center"
               />
             </div>
 
+          </div>
+        </div>
+
+        {/* Billing toggle */}
+        <div className="flex justify-center lg:justify-start mb-12">
+          <div className="inline-flex items-center border border-foreground/15 p-1 font-mono text-xs">
+            {[
+              { label: "Monthly", annual: false },
+              { label: "Annual", annual: true },
+            ].map((option) => (
+              <button
+                key={option.label}
+                type="button"
+                aria-pressed={isAnnual === option.annual}
+                onClick={() => setIsAnnual(option.annual)}
+                className={`px-5 py-2 transition-colors ${
+                  isAnnual === option.annual ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {option.label}
+                {option.annual && <span className={`ml-2 ${isAnnual ? "text-background/60" : "text-[#eca8d6]"}`}>−18%</span>}
+              </button>
+            ))}
           </div>
         </div>
 
@@ -167,7 +196,8 @@ export function PricingSection() {
                   </ul>
 
                   {/* CTA */}
-                  <button
+                  <Link
+                    href={plan.href}
                     className={`w-full py-4 flex items-center justify-center gap-2 text-sm font-medium transition-all group ${
                       plan.highlight
                         ? "bg-foreground text-background hover:bg-foreground/90"
@@ -176,7 +206,7 @@ export function PricingSection() {
                   >
                     {plan.cta}
                     <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
-                  </button>
+                  </Link>
                 </div>
               </div>
             ))}
@@ -201,9 +231,9 @@ export function PricingSection() {
               Replayable event streams
             </span>
           </div>
-          <a href="#" className="text-sm underline underline-offset-4 hover:text-foreground transition-colors">
+          <Link href="/pricing" className="text-sm underline underline-offset-4 hover:text-foreground transition-colors">
             Compare all features
-          </a>
+          </Link>
         </div>
       </div>
 

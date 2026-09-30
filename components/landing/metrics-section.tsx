@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
+import { useCanvasLoop } from "@/hooks/use-canvas-loop";
 
 const metrics = [
   { 
@@ -80,59 +81,33 @@ function AnimatedNumber({ end, suffix = "", prefix = "" }: { end: number; suffix
 
 function GridBackground() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const timeRef = useRef(0);
-  const frameRef = useRef(0);
 
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
+  useCanvasLoop(canvasRef, (ctx, width, height, frame) => {
+    const time = frame * 0.02;
+    const gridSize = 60;
+    ctx.clearRect(0, 0, width, height);
 
-    const resize = () => {
-      const rect = canvas.getBoundingClientRect();
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
-      canvas.width = rect.width * dpr;
-      canvas.height = rect.height * dpr;
-      ctx.scale(dpr, dpr);
-    };
-    resize();
-    window.addEventListener("resize", resize);
-
-    const render = () => {
-      const rect = canvas.getBoundingClientRect();
-      const width = rect.width;
-      const height = rect.height;
-      ctx.clearRect(0, 0, width, height);
-      const gridSize = 60;
-      const time = timeRef.current;
-      for (let x = 0; x < width; x += gridSize) {
-        for (let y = 0; y < height; y += gridSize) {
-          const wave = Math.sin(x * 0.01 + y * 0.01 + time) * 0.5 + 0.5;
-          const size = 1 + wave * 2;
-          ctx.beginPath();
-          ctx.arc(x, y, size, 0, Math.PI * 2);
-          ctx.fillStyle = "rgba(255, 255, 255, 0.04)";
-          ctx.fill();
-        }
+    // One path, one fill: far cheaper than filling each dot separately
+    ctx.fillStyle = "rgba(255, 255, 255, 0.04)";
+    ctx.beginPath();
+    for (let x = 0; x < width; x += gridSize) {
+      for (let y = 0; y < height; y += gridSize) {
+        const wave = Math.sin(x * 0.01 + y * 0.01 + time) * 0.5 + 0.5;
+        const size = 1 + wave * 2;
+        ctx.moveTo(x + size, y);
+        ctx.arc(x, y, size, 0, Math.PI * 2);
       }
-      const pulseY = (time * 30) % height;
-      ctx.strokeStyle = "rgba(255, 255, 255, 0.03)";
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.moveTo(0, pulseY);
-      ctx.lineTo(width, pulseY);
-      ctx.stroke();
-      timeRef.current += 0.02;
-      frameRef.current = requestAnimationFrame(render);
-    };
-    render();
+    }
+    ctx.fill();
 
-    return () => {
-      window.removeEventListener("resize", resize);
-      cancelAnimationFrame(frameRef.current);
-    };
-  }, []);
+    const pulseY = (time * 30) % height;
+    ctx.strokeStyle = "rgba(255, 255, 255, 0.03)";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(0, pulseY);
+    ctx.lineTo(width, pulseY);
+    ctx.stroke();
+  });
 
   return (
     <canvas
@@ -163,50 +138,29 @@ function DotGraph({
   amplitude?: number;
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const frameRef = useRef(0);
-  const timeRef = useRef(Math.random() * 100);
+  const offsetRef = useRef(freq1 * 1000);
 
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
+  useCanvasLoop(canvasRef, (ctx, W, H, frame) => {
+    ctx.clearRect(0, 0, W, H);
+    const t = offsetRef.current + frame * speed;
+    const cols = Math.floor(W / 8);
 
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
-    const W = canvas.offsetWidth || 300;
-    const H = height;
-    canvas.width = W * dpr;
-    canvas.height = H * dpr;
-    ctx.scale(dpr, dpr);
+    for (let i = 0; i < cols; i++) {
+      const raw = baseline + amplitude * Math.sin(i * freq1 + t) * Math.cos(i * freq2 + t * freqT);
+      const v = Math.max(0, Math.min(1, raw));
+      const dotY = H - 4 - v * (H - 8);
+      const x = i * 8 + 4;
+      const alpha = 0.15 + v * 0.55;
+      const r = 1.5 + v * 1.2;
 
-    const render = () => {
-      ctx.clearRect(0, 0, W, H);
-      const t = timeRef.current;
-      const cols = Math.floor(W / 8);
-
-      for (let i = 0; i < cols; i++) {
-        const raw = baseline + amplitude * Math.sin(i * freq1 + t) * Math.cos(i * freq2 + t * freqT);
-        const v = Math.max(0, Math.min(1, raw));
-        const dotY = H - 4 - v * (H - 8);
-        const x = i * 8 + 4;
-        const alpha = 0.15 + v * 0.55;
-        const r = 1.5 + v * 1.2;
-
-        ctx.beginPath();
-        ctx.arc(x, dotY, r, 0, Math.PI * 2);
-        ctx.fillStyle = color === "green"
-          ? `rgba(236, 168, 214, ${alpha})`
-          : `rgba(255, 255, 255, ${alpha})`;
-        ctx.fill();
-      }
-
-      timeRef.current += speed;
-      frameRef.current = requestAnimationFrame(render);
-    };
-
-    render();
-    return () => cancelAnimationFrame(frameRef.current);
-  }, [color, height, freq1, freq2, freqT, speed, baseline, amplitude]);
+      ctx.beginPath();
+      ctx.arc(x, dotY, r, 0, Math.PI * 2);
+      ctx.fillStyle = color === "green"
+        ? `rgba(236, 168, 214, ${alpha})`
+        : `rgba(255, 255, 255, ${alpha})`;
+      ctx.fill();
+    }
+  });
 
   return (
     <canvas
@@ -216,16 +170,26 @@ function DotGraph({
   );
 }
 
-export function MetricsSection() {
+// Isolated so the per-second tick only re-renders this span, not the whole section
+function LiveClock() {
   const [time, setTime] = useState<Date | null>(null);
-  const [isVisible, setIsVisible] = useState(false);
-  const sectionRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     setTime(new Date());
     const interval = setInterval(() => setTime(new Date()), 1000);
     return () => clearInterval(interval);
   }, []);
+
+  return (
+    <span className="text-sm font-mono text-muted-foreground tabular-nums">
+      {time ? `${time.toLocaleTimeString("en-GB", { timeZone: "UTC" })} UTC` : ""}
+    </span>
+  );
+}
+
+export function MetricsSection() {
+  const [isVisible, setIsVisible] = useState(false);
+  const sectionRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -251,9 +215,7 @@ export function MetricsSection() {
                 <span className="w-2 h-2 rounded-full bg-[#eca8d6] animate-pulse" />
                 LIVE
               </span>
-              <span className="text-sm font-mono text-muted-foreground">
-                {time ? `${time.toLocaleTimeString("en-GB")} UTC` : ""}
-              </span>
+              <LiveClock />
             </div>
 
             <h2 className={`text-6xl md:text-7xl lg:text-[140px] font-display tracking-tight leading-[0.95] transition-all duration-1000 ${
@@ -274,6 +236,8 @@ export function MetricsSection() {
             src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/real-time-graph-INFmn3u0MlUwvNPynoIhwxtPaPjxM5.png"
             alt=""
             aria-hidden="true"
+            loading="lazy"
+            decoding="async"
             className="w-full h-auto object-cover"
           />
         </div>
